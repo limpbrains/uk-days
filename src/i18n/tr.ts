@@ -154,5 +154,7 @@ export const tr: Translation = {
     resetProfile: 'Bu profili sıfırla',
     storageFailed: 'Tarayıcı kaydedemedi (depolama alanı dolu veya gizli mod) — sekmeyi kapattığınızda değişiklikler kaybolacak.',
     importTooLarge: 'Dosya içe aktarılamayacak kadar büyük (sınır {{limit}} MB).',
+    tryAgain: 'Tekrar dene',
+    targetClamped: 'uygunluk süresi zaten tamamlandı — tüm kuralları karşılayan ilk gün',
   },
 }

@@ -56,3 +56,16 @@ test('an invalid ?today= value falls back to the real date', async ({ page }) =>
   await expect(page.getByRole('tab', { name: STANDARD })).toBeVisible()
   await expect(page.locator('.today')).not.toContainText('NaN')
 })
+
+test('a half-typed what-if date does not crash the dashboard', async ({ page }) => {
+  await openApp(page)
+  const start = page.locator('.controls input[type=date]')
+  // Chrome keeps a five-digit year as a valid input value; the app must ignore it.
+  await start.evaluate((el: HTMLInputElement) => {
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    set.call(el, '20261-12-01')
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await expect(stat(page, 'Earliest application date')).toContainText('31 Aug 2027')
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})

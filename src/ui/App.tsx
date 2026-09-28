@@ -15,7 +15,7 @@ import { ShiftChart } from './ShiftChart'
 import { StatCards } from './StatCards'
 import { useModel, type WhatIf } from './useModel'
 import { YearStrip } from './YearStrip'
-import { fromDay, lastYearStartFor, windowStartFor, countAbsent } from '../lib/naturalisation'
+import { fromDay, isIsoDate, lastYearStartFor, windowStartFor, countAbsent } from '../lib/naturalisation'
 
 const IMPORT_LIMIT_MB = 2
 
@@ -68,7 +68,7 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
           </label>
           <label>
             {t('whatIf.startingOn')}
-            <input type="date" value={whatIf.extraStart} onChange={(e) => e.target.value && setWhatIf({ ...whatIf, extraStart: e.target.value })} />
+            <input type="date" min="1900-01-01" max="2200-12-31" value={whatIf.extraStart} onChange={(e) => isIsoDate(e.target.value) && setWhatIf({ ...whatIf, extraStart: e.target.value })} />
           </label>
         </div>
         <div className="chart-scroll"><ShiftChart curve={m.curve} target={m.target} selected={whatIf.extraDays} onSelect={(d) => setWhatIf({ ...whatIf, extraDays: d })} /></div>
@@ -180,7 +180,8 @@ export default function App() {
         <ErrorBoundary
           resetKey={entry.id}
           message={t('late.crashed')}
-          actionLabel={t('late.resetProfile')}
+          retryLabel={t('late.tryAgain')}
+          actionLabel={entry.source === 'file' ? t('late.resetProfile') : t('editor.delete')}
           onAction={() => (entry.source === 'file' ? store.reset(entry.id) : store.remove(entry.id))}
         >
           <Dashboard

@@ -154,5 +154,7 @@ export const de: Translation = {
     resetProfile: 'Dieses Profil zurücksetzen',
     storageFailed: 'Der Browser konnte nicht speichern (Speicher voll oder privater Modus) — Änderungen gehen beim Schließen des Tabs verloren.',
     importTooLarge: 'Die Datei ist zu groß zum Importieren (Limit {{limit}} MB).',
+    tryAgain: 'Erneut versuchen',
+    targetClamped: 'der Qualifikationszeitraum ist bereits abgeschlossen — erster Tag, der alle Regeln erfüllt',
   },
 }

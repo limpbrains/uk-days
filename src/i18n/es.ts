@@ -154,5 +154,7 @@ export const es: Translation = {
     resetProfile: 'Restablecer este perfil',
     storageFailed: 'El navegador no pudo guardar (almacenamiento lleno o modo privado) — los cambios se perderán al cerrar la pestaña.',
     importTooLarge: 'El archivo es demasiado grande para importar (límite de {{limit}} MB).',
+    tryAgain: 'Intentar de nuevo',
+    targetClamped: 'el período de calificación ya está completo — primer día que cumple todas las reglas',
   },
 }

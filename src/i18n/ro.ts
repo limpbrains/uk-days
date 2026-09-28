@@ -154,5 +154,7 @@ export const ro: Translation = {
     resetProfile: 'Resetează acest profil',
     storageFailed: 'Browserul nu a putut salva (spațiu de stocare plin sau mod privat) — modificările se vor pierde la închiderea filei.',
     importTooLarge: 'Fișierul este prea mare pentru a fi importat (limită {{limit}} MB).',
+    tryAgain: 'Încearcă din nou',
+    targetClamped: 'perioada de calificare este deja completă — prima zi care îndeplinește toate regulile',
   },
 }

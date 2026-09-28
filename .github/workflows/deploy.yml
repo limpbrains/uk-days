@@ -18,8 +18,12 @@ concurrency:
 
 jobs:
   build:
-    # Only ship when the CI run that triggered us succeeded (or on a manual run).
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # Only ship a push to this repo's main that CI validated (never a pull request's CI run), or a manual run.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push' &&
+           github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

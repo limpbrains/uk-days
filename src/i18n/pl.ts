@@ -154,5 +154,7 @@ export const pl: Translation = {
     resetProfile: 'Przywróć ten profil',
     storageFailed: 'Przeglądarka nie mogła zapisać (pamięć pełna lub tryb prywatny) — zmiany zostaną utracone po zamknięciu karty.',
     importTooLarge: 'Plik jest zbyt duży do zaimportowania (limit {{limit}} MB).',
+    tryAgain: 'Spróbuj ponownie',
+    targetClamped: 'okres kwalifikacyjny jest już zakończony — pierwszy dzień, który spełnia wszystkie zasady',
   },
 }

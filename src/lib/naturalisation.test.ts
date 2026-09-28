@@ -345,6 +345,23 @@ describe('checkDate: qualifying window', () => {
     expect(fromDay(targetDay(ctx))).toBe('2029-02-28')
   })
 
+  it('target is always the first eligible day for arrivals around leap years', () => {
+    for (const [arrived, years, expected] of [
+      ['2023-03-01', 5, '2028-02-29'],
+      ['2027-03-01', 5, '2032-02-29'],
+      ['2025-03-01', 3, '2028-02-29'],
+      ['2023-03-01', 1, '2024-02-29'],
+      ['2024-02-29', 1, '2025-02-28'],
+      ['2022-09-01', 5, '2027-08-31'],
+    ] as const) {
+      const ctx = createContext(profile([], { arrivedUK: arrived, rules: { ...DEFAULT_RULES, windowYears: years } }))
+      const T = targetDay(ctx)
+      expect(fromDay(T), `${arrived} +${years}`).toBe(expected)
+      expect(checkDate(ctx, T).ok).toBe(true)
+      expect(checkDate(ctx, T - 1).ok).toBe(false)
+    }
+  })
+
   it('fails when absent on the first day of the window, passes on the return day', () => {
     const ctx = createContext(profile([{ out: '2022-09-20', in: '2022-09-30' }]))
     // window starts 2022-09-25, a full day abroad
@@ -628,8 +645,12 @@ describe('horizon', () => {
     expect(fromDay(earliestEligible(ctx, today)!)).toBe('2032-06-01')
   })
 
-  it('default target never lies in the past when today is known', () => {
+  it('default target for long-time residents is the earliest eligible day, not before today', () => {
     expect(fromDay(targetDay(createContext(profile([], { arrivedUK: '2015-01-01' }), today)))).toBe('2026-09-28')
+    // 100 full days abroad ending 2026-09-05 push the earliest date (90-day rule) past today; target follows it.
+    const ctx = createContext(profile([trip('2026-05-27', 100)], { arrivedUK: '2015-01-01' }), today)
+    expect(targetDay(ctx)).toBe(earliestEligible(ctx, today))
+    expect(targetDay(ctx)).toBeGreaterThan(today)
     expect(fromDay(targetDay(createContext(profile([], { arrivedUK: '2015-01-01' }))))).toBe('2019-12-31')
   })
 })
