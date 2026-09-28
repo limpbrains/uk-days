@@ -28,7 +28,10 @@ export function StatCards({ m }: { m: Model }) {
       <Stat
         label={t('stats.earliest')}
         value={f.day(m.earliestAll)}
-        sub={shift === null ? t('stats.earliestUnreachable') : t('stats.vsTarget', { delta: f.delta(shift) })}
+        sub={
+          (shift === null ? t('stats.earliestUnreachable') : t('stats.vsTarget', { delta: f.delta(shift) })) +
+          (ilr === null && rules.ilrMonths > 0 ? ' · ' + t('late.ilrAssumed') : '')
+        }
         tone={shift === 0 ? 'good' : shift === null || shift > 0 ? 'critical' : undefined}
       />
       <Stat

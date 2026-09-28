@@ -595,6 +595,32 @@ describe('open-ended trips in eligibility', () => {
   })
 })
 
+describe('horizon', () => {
+  const today = d('2026-09-28')
+
+  it('finds today for someone who arrived long ago with no absences', () => {
+    const ctx = createContext(profile([], { arrivedUK: '2015-01-01' }), today)
+    expect(fromDay(earliestEligible(ctx, today)!)).toBe('2026-09-28')
+  })
+
+  it('still counts trips near a far-future applicationDate', () => {
+    const ctx = createContext(profile([trip('2030-01-01', 500)], { applicationDate: '2032-01-01' }), today)
+    const r = checkDate(ctx, d('2032-01-01'))
+    expect(r.totalAbsent).toBe(500)
+    expect(r.ok).toBe(false)
+  })
+
+  it('extends past a late ILR date', () => {
+    const ctx = createContext(profile([], { arrivedUK: '2015-01-01', ilrDate: '2031-06-01' }), today)
+    expect(fromDay(earliestEligible(ctx, today)!)).toBe('2032-06-01')
+  })
+
+  it('default target never lies in the past when today is known', () => {
+    expect(fromDay(targetDay(createContext(profile([], { arrivedUK: '2015-01-01' }), today)))).toBe('2026-09-28')
+    expect(fromDay(targetDay(createContext(profile([], { arrivedUK: '2015-01-01' }))))).toBe('2019-12-31')
+  })
+})
+
 describe('targetDay / budget', () => {
   it('target is the day before arrival + windowYears', () => {
     expect(fromDay(targetDay(createContext(profile([]))))).toBe('2027-08-31')

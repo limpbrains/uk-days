@@ -56,3 +56,41 @@ export function importProfiles(text: string): ImportResult {
   }
   return { profiles, errors }
 }
+
+export interface MergeResult {
+  /** Browser overrides for file profiles, keyed by id. */
+  overrides: Record<string, unknown>
+  locals: { id: string; raw: unknown }[]
+  added: number
+  replaced: number
+}
+
+/**
+ * Folds imported profiles into the current state: an id matching a file profile becomes its
+ * browser override, an id matching a browser profile replaces it, anything else is added with a
+ * fresh id when it has none. Pure; the caller persists.
+ */
+export function mergeImport(
+  imported: TransferEntry[],
+  fileIds: string[],
+  locals: { id: string; raw: unknown }[],
+  newId: () => string,
+): MergeResult {
+  const overrides: Record<string, unknown> = {}
+  let next = [...locals]
+  let added = 0
+  let replaced = 0
+  for (const p of imported) {
+    if (p.id !== null && fileIds.includes(p.id)) {
+      overrides[p.id] = p.raw
+      replaced++
+    } else if (p.id !== null && next.some((l) => l.id === p.id)) {
+      next = next.map((l) => (l.id === p.id ? { id: l.id, raw: p.raw } : l))
+      replaced++
+    } else {
+      next.push({ id: p.id ?? newId(), raw: p.raw })
+      added++
+    }
+  }
+  return { overrides, locals: next, added, replaced }
+}

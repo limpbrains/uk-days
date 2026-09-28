@@ -52,3 +52,31 @@ describe('parseProfile', () => {
     expect(r.errors[0]).toMatch(/absence #1/)
   })
 })
+
+describe('parseProfile: rule and date sanity', () => {
+  const base = { name: 'X', arrivedUK: '2022-09-01', absences: [] }
+
+  it('rejects non-integer, negative and absurd rule values', () => {
+    expect(parseProfile('x.json', { ...base, rules: { windowYears: 2.5 } }).errors[0]).toMatch(/rules\.windowYears/)
+    expect(parseProfile('x.json', { ...base, rules: { totalLimit: -1 } }).errors[0]).toMatch(/rules\.totalLimit/)
+    expect(parseProfile('x.json', { ...base, rules: { windowYears: 300000 } }).errors[0]).toMatch(/rules\.windowYears/)
+    expect(parseProfile('x.json', { ...base, rules: { windowYears: 0 } }).errors[0]).toMatch(/rules\.windowYears/)
+    expect(parseProfile('x.json', { ...base, rules: { ilrMonths: 500 } }).errors[0]).toMatch(/rules\.ilrMonths/)
+  })
+
+  it('requires the discretion bands to be ordered', () => {
+    expect(parseProfile('x.json', { ...base, rules: { softLimit: 400 } }).errors[0]).toMatch(/softLimit.*totalLimit/)
+    expect(parseProfile('x.json', { ...base, rules: { hardLimit: 470 } }).errors[0]).toMatch(/hardLimit.*softLimit/)
+    expect(parseProfile('x.json', { ...base, rules: { lastYearSoftLimit: 80 } }).errors[0]).toMatch(/lastYearSoftLimit.*lastYearLimit/)
+  })
+
+  it('accepts the spouse preset and a 1-year window', () => {
+    expect(parseProfile('x.json', { ...base, rules: { windowYears: 3, totalLimit: 270, softLimit: 300, hardLimit: 540, ilrMonths: 0 } }).errors).toEqual([])
+    expect(parseProfile('x.json', { ...base, rules: { windowYears: 1 } }).errors).toEqual([])
+  })
+
+  it('rejects ilrDate and applicationDate before arrival', () => {
+    expect(parseProfile('x.json', { ...base, ilrDate: '2020-01-01' }).errors[0]).toMatch(/ilrDate.*arrivedUK/)
+    expect(parseProfile('x.json', { ...base, applicationDate: '2022-08-31' }).errors[0]).toMatch(/applicationDate.*arrivedUK/)
+  })
+})

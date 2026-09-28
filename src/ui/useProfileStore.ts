@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { parseProfile } from '../data/parseProfile'
 import { profileToRaw, type RawProfile } from '../data/rawProfile'
 import { clearOverride, loadLocalProfiles, loadOverride, saveLocalProfiles, saveOverride, type StoredProfile } from '../data/storage'
-import { exportProfiles, importProfiles } from '../data/transfer'
+import { exportProfiles, importProfiles, mergeImport } from '../data/transfer'
 import type { Profile } from '../lib/naturalisation'
 
 export type ProfileSource = 'file' | 'local'
@@ -28,8 +28,10 @@ export interface ProfileStore {
   /** Add a browser profile; returns its id, or null when invalid. */
   add: (raw: RawProfile) => string | null
   duplicate: (id: string) => string | null
-  importAll: (text: string) => { added: number; errors: string[] }
+  importAll: (text: string) => { added: number; replaced: number; errors: string[] }
   exportAll: () => string
+  /** Browser edits that no longer validate (e.g. after a rules change) and were set aside at load. */
+  droppedOverrides: { id: string; errors: string[]; json: string }[]
 }
 
 function pathFor(id: string) {
@@ -40,16 +42,27 @@ function newId() {
   return `local-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
-function loadOverrides(files: Profile[]): Record<string, RawProfile> {
-  const out: Record<string, RawProfile> = {}
+interface Dropped {
+  id: string
+  errors: string[]
+  json: string
+}
+
+function loadOverrides(files: Profile[]): { overrides: Record<string, RawProfile>; dropped: Dropped[] } {
+  const overrides: Record<string, RawProfile> = {}
+  const dropped: Dropped[] = []
   for (const f of files) {
     const raw = loadOverride(f.id)
     if (raw === null) continue
-    const { profile } = parseProfile(pathFor(f.id), raw)
-    if (profile) out[f.id] = profileToRaw(profile)
-    else clearOverride(f.id)
+    const { profile, errors } = parseProfile(pathFor(f.id), raw)
+    if (profile) overrides[f.id] = profileToRaw(profile)
+    else {
+      // Keep the user's data visible instead of deleting it silently.
+      dropped.push({ id: f.id, errors, json: JSON.stringify(raw, null, 2) })
+      clearOverride(f.id)
+    }
   }
-  return out
+  return { overrides, dropped }
 }
 
 function loadLocals(): { id: string; raw: RawProfile }[] {
@@ -63,7 +76,8 @@ function loadLocals(): { id: string; raw: RawProfile }[] {
 
 /** File profiles (with browser overrides) plus profiles created in the browser. */
 export function useProfileStore(files: Profile[]): ProfileStore {
-  const [overrides, setOverrides] = useState(() => loadOverrides(files))
+  const [loaded] = useState(() => loadOverrides(files))
+  const [overrides, setOverrides] = useState(loaded.overrides)
   const [locals, setLocals] = useState(loadLocals)
 
   const persistLocals = useCallback((next: { id: string; raw: RawProfile }[]) => {
@@ -135,27 +149,21 @@ export function useProfileStore(files: Profile[]): ProfileStore {
   const importAll = useCallback(
     (text: string) => {
       const { profiles, errors } = importProfiles(text)
-      let nextLocals = [...locals]
+      const normalised = profiles.map((p) => ({ id: p.id, raw: profileToRaw(parseProfile(`${p.id ?? 'x'}.json`, p.raw).profile!) }))
+      const merged = mergeImport(normalised, files.map((f) => f.id), locals, newId)
       const nextOverrides = { ...overrides }
-      for (const p of profiles) {
-        const raw = profileToRaw(parseProfile(`${p.id ?? 'x'}.json`, p.raw).profile!)
-        if (p.id !== null && files.some((f) => f.id === p.id)) {
-          saveOverride(p.id, raw)
-          nextOverrides[p.id] = raw
-        } else if (p.id !== null && nextLocals.some((l) => l.id === p.id)) {
-          nextLocals = nextLocals.map((l) => (l.id === p.id ? { id: p.id!, raw } : l))
-        } else {
-          nextLocals.push({ id: p.id ?? newId(), raw })
-        }
+      for (const [id, raw] of Object.entries(merged.overrides)) {
+        saveOverride(id, raw)
+        nextOverrides[id] = raw as RawProfile
       }
       setOverrides(nextOverrides)
-      persistLocals(nextLocals)
-      return { added: profiles.length, errors }
+      persistLocals(merged.locals as { id: string; raw: RawProfile }[])
+      return { added: merged.added, replaced: merged.replaced, errors }
     },
     [files, locals, overrides, persistLocals],
   )
 
   const exportAll = useCallback(() => exportProfiles(entries.map((e) => ({ id: e.id, raw: e.raw }))), [entries])
 
-  return { entries, update, reset, remove, add, duplicate, importAll, exportAll }
+  return { entries, update, reset, remove, add, duplicate, importAll, exportAll, droppedOverrides: loaded.dropped }
 }

@@ -63,7 +63,7 @@ test('imports an export file and reports invalid profiles', async ({ page }) => 
     ),
   }
   await page.locator('input[type=file]').setInputFiles(file)
-  await expect(page.getByRole('status')).toContainText('1 profile(s) imported')
+  await expect(page.getByRole('status')).toContainText('1 added, 0 replaced')
   await expect(page.getByRole('status')).toContainText('local-bad')
   await expect(page.getByRole('tab', { name: 'Imported' })).toBeVisible()
 })

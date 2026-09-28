@@ -143,6 +143,15 @@ export const en = {
   errors: {
     skipped: 'was skipped:',
   },
+  /** Keys added after the first translation round; other languages may omit them (English fallback). */
+  late: {
+    ilrAssumed: 'assumes ILR is held in time — add the ILR date',
+    importResult: '{{added}} added, {{replaced}} replaced',
+    droppedTitle: 'Browser edits for {{id}} no longer pass validation and were set aside:',
+    droppedHint: 'Copy the JSON below if you want to fix and re-import it.',
+    crashed: 'This profile could not be displayed.',
+    resetProfile: 'Reset this profile',
+  },
 }
 
 /**
@@ -150,5 +159,5 @@ export const en = {
  * Extra keys are allowed so languages can add plural forms (e.g. `_zero`, `_two` in Arabic).
  */
 export type Translation = {
-  [S in keyof typeof en]: { [K in keyof (typeof en)[S]]: (typeof en)[S][K] extends string ? string : Record<string, string> } & Record<string, unknown>
-}
+  [S in Exclude<keyof typeof en, 'late'>]: { [K in keyof (typeof en)[S]]: (typeof en)[S][K] extends string ? string : Record<string, string> } & Record<string, unknown>
+} & { late?: Partial<Record<keyof (typeof en)['late'], string>> }
