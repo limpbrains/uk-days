@@ -243,18 +243,22 @@ export interface CheckResult {
   violations: Violation[]
 }
 
-/** Years past the latest anchor date the timeline extends, so shifted dates can be found. */
+/** Years past the latest anchor date the timeline extends, on top of one full qualifying window. */
 const HORIZON_EXTRA_YEARS = 3
 
-/** Last day of the timeline: 3 years past the latest of arrival + window, today, the planned date and ILR + wait. */
+/**
+ * Last day of the timeline: one qualifying window plus 3 years past the latest of arrival,
+ * today, the planned date and ILR + wait — enough for a window that can only start after an
+ * assumed return from a long open-ended trip.
+ */
 function horizonEnd(base: Omit<Context, 'tl' | 'extra'>): number {
   const anchors = [
-    addYears(base.arrivedDay, base.rules.windowYears),
+    base.arrivedDay,
     Number.isFinite(base.openUntil) ? base.openUntil : base.arrivedDay,
     base.applicationDay ?? base.arrivedDay,
     base.ilrDay === null ? base.arrivedDay : addMonths(base.ilrDay, base.rules.ilrMonths),
   ]
-  return addYears(Math.max(...anchors), HORIZON_EXTRA_YEARS)
+  return addYears(Math.max(...anchors), base.rules.windowYears + HORIZON_EXTRA_YEARS)
 }
 
 function build(base: Omit<Context, 'tl' | 'extra'>, extra: Extra | null): Context {

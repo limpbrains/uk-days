@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { parseProfile } from '../data/parseProfile'
 import { profileToRaw, type RawProfile } from '../data/rawProfile'
-import { clearOverride, loadLocalProfiles, loadOverride, saveLocalProfiles, saveOverride } from '../data/storage'
-import { exportProfiles, importProfiles, mergeImport } from '../data/transfer'
+import { clearOverride, loadLocalProfiles, loadOverride, saveLocalProfiles, saveOverride, type StoredProfile } from '../data/storage'
+import { MAX_PROFILES, exportProfiles, importProfiles, mergeImport } from '../data/transfer'
 import type { Profile } from '../lib/naturalisation'
 
 export type ProfileSource = 'file' | 'local'
@@ -53,26 +53,36 @@ function newId() {
   return `local-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
-function loadAll(files: Profile[], today: string): { overrides: Record<string, RawProfile>; locals: Local[]; dropped: DroppedProfile[] } {
+interface Loaded {
+  overrides: Record<string, RawProfile>
+  locals: Local[]
+  dropped: DroppedProfile[]
+  /** Invalid browser profiles kept verbatim in storage until the user acts on them. */
+  quarantined: StoredProfile[]
+}
+
+function loadAll(files: Profile[], today: string): Loaded {
   const overrides: Record<string, RawProfile> = {}
   const locals: Local[] = []
   const dropped: DroppedProfile[] = []
+  const quarantined: StoredProfile[] = []
   for (const f of files) {
     const raw = loadOverride(f.id)
     if (raw === null) continue
     const { profile, errors } = parseProfile(pathFor(f.id), raw, today)
     if (profile) overrides[f.id] = profileToRaw(profile)
-    else {
-      dropped.push({ id: f.id, errors, json: JSON.stringify(raw, null, 2) })
-      clearOverride(f.id)
-    }
+    // An invalid override stays in storage (the next edit or a reset replaces it) so it can be copied.
+    else dropped.push({ id: f.id, errors, json: JSON.stringify(raw, null, 2) })
   }
   for (const s of loadLocalProfiles()) {
     const { profile, errors } = parseProfile(`${s.id}.json`, s.raw, today)
     if (profile) locals.push({ id: s.id, raw: profileToRaw(profile) })
-    else dropped.push({ id: s.id, errors, json: JSON.stringify(s.raw, null, 2) })
+    else {
+      dropped.push({ id: s.id, errors, json: JSON.stringify(s.raw, null, 2) })
+      quarantined.push(s)
+    }
   }
-  return { overrides, locals, dropped }
+  return { overrides, locals, dropped, quarantined }
 }
 
 /**
@@ -97,8 +107,9 @@ export function useProfileStore(files: Profile[], today: string): ProfileStore {
   const persistLocals = useCallback((next: Local[]) => {
     localsRef.current = next
     setLocals(next)
-    note(saveLocalProfiles(next))
-  }, [note])
+    // Quarantined (invalid) profiles are written back untouched so they are never lost.
+    note(saveLocalProfiles([...next, ...loaded.quarantined.filter((q) => !next.some((l) => l.id === q.id))]))
+  }, [note, loaded.quarantined])
 
   const persistOverride = useCallback((id: string, raw: RawProfile) => {
     overridesRef.current = { ...overridesRef.current, [id]: raw }
@@ -106,10 +117,13 @@ export function useProfileStore(files: Profile[], today: string): ProfileStore {
     note(saveOverride(id, raw))
   }, [note])
 
+  // One raw object per file profile, stable across renders, so an unsaved draft can be matched to it by identity.
+  const fileRaws = useMemo(() => new Map(files.map((f) => [f.id, profileToRaw(f)])), [files])
+
   const entries = useMemo<ProfileEntry[]>(() => {
     const fromFiles = files.map((file): ProfileEntry => {
       const raw = overrides[file.id]
-      if (!raw) return { id: file.id, source: 'file', profile: file, raw: profileToRaw(file), isEdited: false }
+      if (!raw) return { id: file.id, source: 'file', profile: file, raw: fileRaws.get(file.id)!, isEdited: false }
       const { profile } = parseProfile(pathFor(file.id), raw, today)
       return { id: file.id, source: 'file', profile: profile ?? file, raw, isEdited: true }
     })
@@ -118,7 +132,7 @@ export function useProfileStore(files: Profile[], today: string): ProfileStore {
       return profile ? [{ id: l.id, source: 'local', profile, raw: l.raw, isEdited: false }] : []
     })
     return [...fromFiles, ...fromLocals]
-  }, [files, overrides, locals, today])
+  }, [files, fileRaws, overrides, locals, today])
 
   const update = useCallback(
     (id: string, raw: RawProfile) => {
@@ -143,7 +157,7 @@ export function useProfileStore(files: Profile[], today: string): ProfileStore {
   const add = useCallback(
     (raw: RawProfile) => {
       const { profile } = parseProfile('new.json', raw, today)
-      if (!profile) return null
+      if (!profile || localsRef.current.length >= MAX_PROFILES) return null
       const id = newId()
       persistLocals([...localsRef.current, { id, raw }])
       return id

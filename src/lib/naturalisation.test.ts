@@ -645,6 +645,12 @@ describe('horizon', () => {
     expect(fromDay(earliestEligible(ctx, today)!)).toBe('2032-06-01')
   })
 
+  it('reaches past a long open-ended trip: the window can only start after the assumed return', () => {
+    const ctx = createContext(profile([{ out: '2024-01-01' }], { arrivedUK: '2022-01-01' }), today)
+    // Return assumed 2026-09-29; the first window starting there ends 2031-09-28.
+    expect(fromDay(earliestEligible(ctx, today)!)).toBe('2031-09-28')
+  })
+
   it('default target for long-time residents is the earliest eligible day, not before today', () => {
     expect(fromDay(targetDay(createContext(profile([], { arrivedUK: '2015-01-01' }), today)))).toBe('2026-09-28')
     // 100 full days abroad ending 2026-09-05 push the earliest date (90-day rule) past today; target follows it.
