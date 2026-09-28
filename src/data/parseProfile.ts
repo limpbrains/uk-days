@@ -24,6 +24,13 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 export const MAX_ABSENCES = 2000
 export const MAX_TEXT = 200
+/** Dates outside this range are rejected so the day timeline stays small. */
+export const MIN_DATE = '1900-01-01'
+export const MAX_DATE = '2200-12-31'
+
+function inRange(iso: string): boolean {
+  return iso >= MIN_DATE && iso <= MAX_DATE
+}
 
 /**
  * Validates a raw JSON object from profiles/<id>.json into a Profile.
@@ -36,9 +43,12 @@ export function parseProfile(path: string, raw: unknown, today?: string): ParseR
 
   if (typeof raw.name !== 'string' || !raw.name.trim()) errors.push('"name" must be a non-empty string')
   else if (raw.name.length > MAX_TEXT) errors.push(`"name" must be at most ${MAX_TEXT} characters`)
-  if (!isIsoDate(raw.arrivedUK)) errors.push('"arrivedUK" must be a date YYYY-MM-DD')
-  if (raw.ilrDate !== undefined && !isIsoDate(raw.ilrDate)) errors.push('"ilrDate" must be a date YYYY-MM-DD')
-  if (raw.applicationDate !== undefined && !isIsoDate(raw.applicationDate)) errors.push('"applicationDate" must be a date YYYY-MM-DD')
+  for (const key of ['arrivedUK', 'ilrDate', 'applicationDate'] as const) {
+    const v = raw[key]
+    if (v === undefined && key !== 'arrivedUK') continue
+    if (!isIsoDate(v)) errors.push(`"${key}" must be a date YYYY-MM-DD`)
+    else if (!inRange(v)) errors.push(`"${key}" must be between ${MIN_DATE} and ${MAX_DATE}`)
+  }
   if (!Array.isArray(raw.absences)) errors.push('"absences" must be an array')
 
   const rules: Rules = { ...DEFAULT_RULES }
@@ -75,8 +85,10 @@ export function parseProfile(path: string, raw: unknown, today?: string): ParseR
       return { out: '' }
     }
     if (typeof a.out !== 'string') errors.push(`absence #${n}: "out" must be a string YYYY-MM-DD`)
+    else if (isIsoDate(a.out) && !inRange(a.out)) errors.push(`absence #${n}: "out" must be between ${MIN_DATE} and ${MAX_DATE}`)
     const hasIn = a.in !== undefined && a.in !== null && a.in !== ''
     if (hasIn && typeof a.in !== 'string') errors.push(`absence #${n}: "in" must be a string YYYY-MM-DD`)
+    else if (hasIn && isIsoDate(a.in) && !inRange(a.in as string)) errors.push(`absence #${n}: "in" must be between ${MIN_DATE} and ${MAX_DATE}`)
     if (a.note !== undefined && (typeof a.note !== 'string' || a.note.length > MAX_TEXT)) errors.push(`absence #${n}: "note" must be a string of at most ${MAX_TEXT} characters`)
     return {
       out: typeof a.out === 'string' ? a.out : '',

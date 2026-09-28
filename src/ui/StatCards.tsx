@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useFormat } from './format'
 import type { Model } from './useModel'
-import { addMonths, toDay } from '../lib/naturalisation'
+import { addMonths, arrivalTargetDay, toDay } from '../lib/naturalisation'
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'good' | 'critical' }) {
   return (
@@ -38,7 +38,11 @@ export function StatCards({ m }: { m: Model }) {
         label={t('stats.target')}
         value={f.day(m.target)}
         sub={
-          (m.profile.applicationDate ? t('stats.targetSubPlanned') : t('stats.targetSub', { count: rules.windowYears })) +
+          (m.profile.applicationDate
+            ? t('stats.targetSubPlanned')
+            : m.target !== arrivalTargetDay(m.base)
+              ? t('late.targetClamped')
+              : t('stats.targetSub', { count: rules.windowYears })) +
           ' · ' + t('stats.inDays', { count: Math.max(0, m.target - m.today) })
         }
       />

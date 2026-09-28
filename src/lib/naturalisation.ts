@@ -353,11 +353,18 @@ export function shiftCurve(ctx: Context, extraStartDay: number, fromDay: number,
  * The planned application day if set, else the first day whose qualifying window starts on the
  * arrival day — but never earlier than today when today is known (long-time residents).
  */
+/** First day whose qualifying window does not start before the arrival day (leap years can shift it by one). */
+export function arrivalTargetDay(ctx: Context): number {
+  const t = addYears(ctx.arrivedDay - 1, ctx.rules.windowYears)
+  return windowStartFor(ctx, t) < ctx.arrivedDay ? t + 1 : t
+}
+
 export function targetDay(ctx: Context): number {
   if (ctx.applicationDay !== null) return ctx.applicationDay
-  // First day whose window starts on (or, after a 29 Feb arrival, just after) the arrival day.
-  const byArrival = addYears(ctx.arrivedDay - 1, ctx.rules.windowYears)
-  return Number.isFinite(ctx.openUntil) ? Math.max(byArrival, ctx.openUntil) : byArrival
+  const byArrival = arrivalTargetDay(ctx)
+  if (!Number.isFinite(ctx.openUntil) || byArrival >= ctx.openUntil) return byArrival
+  // Long-time resident: the natural target is behind us, so aim at the first day that qualifies.
+  return earliestEligible(ctx, ctx.openUntil) ?? ctx.openUntil
 }
 
 export interface Budget {

@@ -154,5 +154,7 @@ export const zh: Translation = {
     resetProfile: '重置此档案',
     storageFailed: '浏览器无法保存(存储空间已满或处于隐私模式)— 关闭标签页后更改将丢失。',
     importTooLarge: '文件过大,无法导入(限制 {{limit}} MB)。',
+    tryAgain: '重试',
+    targetClamped: '资格期已经结束 — 满足所有规则的第一天',
   },
 }

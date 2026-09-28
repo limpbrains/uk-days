@@ -152,6 +152,8 @@ export const en = {
     resetProfile: 'Reset this profile',
     storageFailed: 'The browser refused to save (storage full or private mode) — changes will be lost when you close the tab.',
     importTooLarge: 'File is too large to import (limit {{limit}} MB).',
+    tryAgain: 'Try again',
+    targetClamped: 'the qualifying period is already complete — first day that meets every rule',
   },
 }
 

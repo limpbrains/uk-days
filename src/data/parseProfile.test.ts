@@ -75,6 +75,13 @@ describe('parseProfile: rule and date sanity', () => {
     expect(parseProfile('x.json', { ...base, rules: { windowYears: 1 } }).errors).toEqual([])
   })
 
+  it('keeps dates inside 1900–2200 so timelines stay small', () => {
+    expect(parseProfile('x.json', { ...base, arrivedUK: '0202-09-01' }).errors[0]).toMatch(/"arrivedUK".*1900/)
+    expect(parseProfile('x.json', { ...base, ilrDate: '9999-01-01' }).errors[0]).toMatch(/"ilrDate".*2200/)
+    expect(parseProfile('x.json', { ...base, applicationDate: '2201-01-01' }).errors[0]).toMatch(/"applicationDate".*2200/)
+    expect(parseProfile('x.json', { ...base, absences: [{ out: '2500-01-01', in: '2500-01-05' }] }).errors[0]).toMatch(/absence #1.*2200/)
+  })
+
   it('rejects ilrDate and applicationDate before arrival', () => {
     expect(parseProfile('x.json', { ...base, ilrDate: '2020-01-01' }).errors[0]).toMatch(/ilrDate.*arrivedUK/)
     expect(parseProfile('x.json', { ...base, applicationDate: '2022-08-31' }).errors[0]).toMatch(/applicationDate.*arrivedUK/)

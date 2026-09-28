@@ -4,6 +4,9 @@ interface Props {
   /** Re-mount key: when it changes the boundary clears its error. */
   resetKey: string
   message: string
+  /** Non-destructive: just re-render. */
+  retryLabel: string
+  /** Destructive fallback (reset/delete the profile); shown second. */
   actionLabel: string
   onAction: () => void
   children: ReactNode
@@ -32,9 +35,12 @@ export class ErrorBoundary extends Component<Props, State> {
       <div className="card banner" role="alert">
         <p>{this.props.message}</p>
         <pre className="json">{String(this.state.error.message)}</pre>
-        <button type="button" className="btn danger" onClick={() => { this.props.onAction(); this.setState({ error: null }) }}>
-          {this.props.actionLabel}
-        </button>
+        <div className="editor-actions">
+          <button type="button" className="btn primary" onClick={() => this.setState({ error: null })}>{this.props.retryLabel}</button>
+          <button type="button" className="btn danger" onClick={() => { this.props.onAction(); this.setState({ error: null }) }}>
+            {this.props.actionLabel}
+          </button>
+        </div>
       </div>
     )
   }

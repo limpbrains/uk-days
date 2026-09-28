@@ -154,5 +154,7 @@ export const fr: Translation = {
     resetProfile: 'Réinitialiser ce profil',
     storageFailed: 'Le navigateur n’a pas pu enregistrer (stockage plein ou mode privé) — les modifications seront perdues à la fermeture de l’onglet.',
     importTooLarge: 'Le fichier est trop volumineux pour être importé (limite de {{limit}} Mo).',
+    tryAgain: 'Réessayer',
+    targetClamped: 'la période de qualification est déjà terminée — premier jour qui respecte toutes les règles',
   },
 }

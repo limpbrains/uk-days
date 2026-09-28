@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { toDay, budget, checkDate, createContext, earliestEligible, shiftCurve, targetDay, withExtra, type Budget, type CheckResult, type Context, type CurvePoint, type Profile } from '../lib/naturalisation'
+import { toDay, isIsoDate, budget, checkDate, createContext, earliestEligible, shiftCurve, targetDay, withExtra, type Budget, type CheckResult, type Context, type CurvePoint, type Profile } from '../lib/naturalisation'
 
 export interface WhatIf {
   extraDays: number
@@ -30,7 +30,8 @@ export interface Model {
 
 export function useModel(profile: Profile, today: number, whatIf: WhatIf): Model {
   const base = useMemo(() => createContext(profile, today), [profile, today])
-  const extraStartDay = toDay(whatIf.extraStart)
+  // A half-typed date (e.g. a five-digit year) must never reach the engine.
+  const extraStartDay = isIsoDate(whatIf.extraStart) ? toDay(whatIf.extraStart) : today + 1
   const all = useMemo(
     () => withExtra(base, { startDay: extraStartDay, days: whatIf.extraDays }),
     [base, extraStartDay, whatIf.extraDays],
