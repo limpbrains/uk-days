@@ -145,4 +145,14 @@ export const ro: Translation = {
   errors: {
     skipped: 'a fost omis:',
   },
+  late: {
+    ilrAssumed: 'presupune că ILR este obținut la timp — adaugă data ILR',
+    importResult: '{{added}} adăugate, {{replaced}} înlocuite',
+    droppedTitle: 'Editările din browser pentru {{id}} nu mai trec validarea și au fost puse deoparte:',
+    droppedHint: 'Copiază JSON-ul de mai jos dacă vrei să-l corectezi și să-l reimporți.',
+    crashed: 'Acest profil nu a putut fi afișat.',
+    resetProfile: 'Resetează acest profil',
+    storageFailed: 'Browserul nu a putut salva (spațiu de stocare plin sau mod privat) — modificările se vor pierde la închiderea filei.',
+    importTooLarge: 'Fișierul este prea mare pentru a fi importat (limită {{limit}} MB).',
+  },
 }

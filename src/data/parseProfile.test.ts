@@ -80,3 +80,27 @@ describe('parseProfile: rule and date sanity', () => {
     expect(parseProfile('x.json', { ...base, applicationDate: '2022-08-31' }).errors[0]).toMatch(/applicationDate.*arrivedUK/)
   })
 })
+
+describe('parseProfile: shapes, sizes and open trips', () => {
+  const base = { name: 'X', arrivedUK: '2022-09-01', absences: [] }
+
+  it('requires absence dates to be strings, not coerced', () => {
+    const r = parseProfile('x.json', { ...base, absences: [{ out: ['2023-01-10'], in: '2023-01-20' }] })
+    expect(r.profile).toBeNull()
+    expect(r.errors[0]).toMatch(/absence #1: "out" must be a string/)
+  })
+
+  it('limits the number of absences and the length of names and notes', () => {
+    const many = Array.from({ length: 2001 }, (_, i) => ({ out: `2100-01-01`, in: '2100-01-02', note: String(i) }))
+    expect(parseProfile('x.json', { ...base, absences: many }).errors[0]).toMatch(/at most 2000 absences/)
+    expect(parseProfile('x.json', { ...base, name: 'x'.repeat(201) }).errors[0]).toMatch(/"name" .*200/)
+    expect(parseProfile('x.json', { ...base, absences: [{ out: '2023-01-10', in: '2023-01-20', note: 'n'.repeat(201) }] }).errors[0]).toMatch(/absence #1: "note".*200/)
+  })
+
+  it('rejects an open-ended trip that starts after today when today is given', () => {
+    const today = '2026-09-28'
+    expect(parseProfile('x.json', { ...base, absences: [{ out: '2026-10-10' }] }, today).errors[0]).toMatch(/absence #1 .*open-ended.*after today/)
+    expect(parseProfile('x.json', { ...base, absences: [{ out: '2026-09-28' }] }, today).errors).toEqual([])
+    expect(parseProfile('x.json', { ...base, absences: [{ out: '2026-10-10' }] }).errors).toEqual([])
+  })
+})

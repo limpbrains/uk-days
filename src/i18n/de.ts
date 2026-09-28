@@ -145,4 +145,14 @@ export const de: Translation = {
   errors: {
     skipped: 'wurde übersprungen:',
   },
+  late: {
+    ilrAssumed: 'geht davon aus, dass ILR rechtzeitig vorliegt — ILR-Datum hinzufügen',
+    importResult: '{{added}} hinzugefügt, {{replaced}} ersetzt',
+    droppedTitle: 'Browser-Änderungen für {{id}} bestehen die Validierung nicht mehr und wurden zurückgestellt:',
+    droppedHint: 'Kopiere das JSON unten, um es zu korrigieren und erneut zu importieren.',
+    crashed: 'Dieses Profil konnte nicht angezeigt werden.',
+    resetProfile: 'Dieses Profil zurücksetzen',
+    storageFailed: 'Der Browser konnte nicht speichern (Speicher voll oder privater Modus) — Änderungen gehen beim Schließen des Tabs verloren.',
+    importTooLarge: 'Die Datei ist zu groß zum Importieren (Limit {{limit}} MB).',
+  },
 }

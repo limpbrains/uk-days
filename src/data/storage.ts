@@ -25,19 +25,22 @@ export function loadOverride(id: string, store: KeyValueStore | null = browserSt
   }
 }
 
-export function saveOverride(id: string, raw: unknown, store: KeyValueStore | null = browserStore()): void {
+/** @returns false when the browser refused the write (quota, private mode); edits then live only in memory. */
+export function saveOverride(id: string, raw: unknown, store: KeyValueStore | null = browserStore()): boolean {
   try {
     store?.setItem(PREFIX + id, JSON.stringify(raw))
+    return store !== null
   } catch {
-    /* storage unavailable or full: edits stay in memory for this session */
+    return false
   }
 }
 
-export function clearOverride(id: string, store: KeyValueStore | null = browserStore()): void {
+export function clearOverride(id: string, store: KeyValueStore | null = browserStore()): boolean {
   try {
     store?.removeItem(PREFIX + id)
+    return store !== null
   } catch {
-    /* ignore */
+    return false
   }
 }
 
@@ -59,10 +62,11 @@ export function loadLocalProfiles(store: KeyValueStore | null = browserStore()):
   }
 }
 
-export function saveLocalProfiles(list: StoredProfile[], store: KeyValueStore | null = browserStore()): void {
+export function saveLocalProfiles(list: StoredProfile[], store: KeyValueStore | null = browserStore()): boolean {
   try {
     store?.setItem(LOCAL_KEY, JSON.stringify(list))
+    return store !== null
   } catch {
-    /* ignore */
+    return false
   }
 }

@@ -145,4 +145,14 @@ export const pl: Translation = {
   errors: {
     skipped: 'zostało pominięte:',
   },
+  late: {
+    ilrAssumed: 'zakłada, że ILR zostanie uzyskane na czas — dodaj datę ILR',
+    importResult: 'dodano {{added}}, zastąpiono {{replaced}}',
+    droppedTitle: 'Zmiany w przeglądarce dla {{id}} nie przechodzą już walidacji i zostały odłożone:',
+    droppedHint: 'Skopiuj poniższy JSON, jeśli chcesz go poprawić i zaimportować ponownie.',
+    crashed: 'Nie udało się wyświetlić tego profilu.',
+    resetProfile: 'Przywróć ten profil',
+    storageFailed: 'Przeglądarka nie mogła zapisać (pamięć pełna lub tryb prywatny) — zmiany zostaną utracone po zamknięciu karty.',
+    importTooLarge: 'Plik jest zbyt duży do zaimportowania (limit {{limit}} MB).',
+  },
 }

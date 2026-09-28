@@ -71,3 +71,17 @@ describe('local profiles', () => {
     expect(loadLocalProfiles(s)).toEqual(list)
   })
 })
+
+describe('storage reports failures', () => {
+  it('returns false when the store throws', () => {
+    const throwing: KeyValueStore = {
+      getItem: () => null,
+      setItem: () => { throw new Error('QuotaExceededError') },
+      removeItem: () => { throw new Error('denied') },
+    }
+    expect(saveOverride('me', {}, throwing)).toBe(false)
+    expect(clearOverride('me', throwing)).toBe(false)
+    expect(saveLocalProfiles([], throwing)).toBe(false)
+    expect(saveOverride('me', {}, memoryStore())).toBe(true)
+  })
+})

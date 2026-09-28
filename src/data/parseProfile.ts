@@ -1,4 +1,4 @@
-import { normalizeAbsences, isIsoDate, toDay, DEFAULT_RULES, type Absence, type Profile, type Rules } from '../lib/naturalisation'
+import { normalizeAbsences, isIsoDate, toDay, fromDay, DEFAULT_RULES, type Absence, type Profile, type Rules } from '../lib/naturalisation'
 
 export interface ParseResult {
   profile: Profile | null
@@ -22,13 +22,20 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
-/** Validates a raw JSON object from profiles/<id>.json into a Profile. */
-export function parseProfile(path: string, raw: unknown): ParseResult {
+export const MAX_ABSENCES = 2000
+export const MAX_TEXT = 200
+
+/**
+ * Validates a raw JSON object from profiles/<id>.json into a Profile.
+ * @param today when given (ISO), an open-ended trip may not start after it.
+ */
+export function parseProfile(path: string, raw: unknown, today?: string): ParseResult {
   const errors: string[] = []
   const id = path.split('/').pop()!.replace(/\.json$/, '')
   if (!isRecord(raw)) return { profile: null, errors: ['file must contain a JSON object'] }
 
   if (typeof raw.name !== 'string' || !raw.name.trim()) errors.push('"name" must be a non-empty string')
+  else if (raw.name.length > MAX_TEXT) errors.push(`"name" must be at most ${MAX_TEXT} characters`)
   if (!isIsoDate(raw.arrivedUK)) errors.push('"arrivedUK" must be a date YYYY-MM-DD')
   if (raw.ilrDate !== undefined && !isIsoDate(raw.ilrDate)) errors.push('"ilrDate" must be a date YYYY-MM-DD')
   if (raw.applicationDate !== undefined && !isIsoDate(raw.applicationDate)) errors.push('"applicationDate" must be a date YYYY-MM-DD')
@@ -59,14 +66,21 @@ export function parseProfile(path: string, raw: unknown): ParseResult {
   }
   if (errors.length) return { profile: null, errors }
 
-  const absences = (raw.absences as unknown[]).map((a, i): Absence => {
+  const list = raw.absences as unknown[]
+  if (list.length > MAX_ABSENCES) return { profile: null, errors: [`"absences" may hold at most ${MAX_ABSENCES} absences`] }
+  const absences = list.map((a, i): Absence => {
+    const n = i + 1
     if (!isRecord(a)) {
-      errors.push(`absence #${i + 1} must be an object {out, in, note?}`)
-      return { out: '', in: '' }
+      errors.push(`absence #${n} must be an object {out, in, note?}`)
+      return { out: '' }
     }
+    if (typeof a.out !== 'string') errors.push(`absence #${n}: "out" must be a string YYYY-MM-DD`)
+    const hasIn = a.in !== undefined && a.in !== null && a.in !== ''
+    if (hasIn && typeof a.in !== 'string') errors.push(`absence #${n}: "in" must be a string YYYY-MM-DD`)
+    if (a.note !== undefined && (typeof a.note !== 'string' || a.note.length > MAX_TEXT)) errors.push(`absence #${n}: "note" must be a string of at most ${MAX_TEXT} characters`)
     return {
-      out: String(a.out ?? ''),
-      ...(a.in !== undefined && a.in !== null && a.in !== '' ? { in: String(a.in) } : {}),
+      out: typeof a.out === 'string' ? a.out : '',
+      ...(hasIn && typeof a.in === 'string' ? { in: a.in } : {}),
       ...(typeof a.note === 'string' ? { note: a.note } : {}),
     }
   })
@@ -75,6 +89,13 @@ export function parseProfile(path: string, raw: unknown): ParseResult {
   const arrivedUK = raw.arrivedUK as string
   const norm = normalizeAbsences(absences, arrivedUK)
   if (norm.errors.length) return { profile: null, errors: norm.errors }
+  if (today !== undefined) {
+    const open = norm.spans.find((s) => s.in === null)
+    if (open && open.out > toDay(today)) {
+      const n = absences.findIndex((a) => a.out === fromDay(open.out) && !a.in) + 1
+      return { profile: null, errors: [`absence #${n} (${fromDay(open.out)} → …): an open-ended trip cannot start after today (${today}); add the return date for a planned trip`] }
+    }
+  }
 
   return {
     profile: {
