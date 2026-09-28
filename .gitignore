@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+playwright-report
+test-results
+
+# Personal profiles stay on your machine; only the examples are tracked.
+profiles/*.json
+!profiles/example-*.json

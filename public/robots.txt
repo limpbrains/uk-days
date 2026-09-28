@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://limpbrains.github.io/uk-days/sitemap.xml

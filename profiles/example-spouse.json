@@ -1,0 +1,13 @@
+{
+  "name": "Sam (example, spouse route)",
+  "arrivedUK": "2024-03-10",
+  "ilrDate": "2026-03-20",
+  "rules": { "windowYears": 3, "totalLimit": 270, "softLimit": 300, "hardLimit": 540, "lastYearLimit": 90, "lastYearSoftLimit": 100, "ilrMonths": 0 },
+  "absences": [
+    { "out": "2024-06-15", "in": "2024-09-05", "note": "Summer with family" },
+    { "out": "2024-12-19", "in": "2025-01-12", "note": "Christmas" },
+    { "out": "2025-06-20", "in": "2025-08-08", "note": "Summer with family" },
+    { "out": "2025-12-20", "in": "2026-01-11", "note": "Christmas" },
+    { "out": "2026-08-18" }
+  ]
+}
