@@ -145,4 +145,14 @@ export const tr: Translation = {
   errors: {
     skipped: 'atlandı:',
   },
+  late: {
+    ilrAssumed: 'ILR\'nin zamanında alındığı varsayılır — ILR tarihini ekleyin',
+    importResult: '{{added}} eklendi, {{replaced}} değiştirildi',
+    droppedTitle: '{{id}} için tarayıcı düzenlemeleri artık doğrulamayı geçmiyor ve bir kenara ayrıldı:',
+    droppedHint: 'Düzeltip yeniden içe aktarmak istiyorsanız aşağıdaki JSON\'u kopyalayın.',
+    crashed: 'Bu profil görüntülenemedi.',
+    resetProfile: 'Bu profili sıfırla',
+    storageFailed: 'Tarayıcı kaydedemedi (depolama alanı dolu veya gizli mod) — sekmeyi kapattığınızda değişiklikler kaybolacak.',
+    importTooLarge: 'Dosya içe aktarılamayacak kadar büyük (sınır {{limit}} MB).',
+  },
 }

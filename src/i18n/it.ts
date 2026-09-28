@@ -145,4 +145,14 @@ export const it: Translation = {
   errors: {
     skipped: 'è stato saltato:',
   },
+  late: {
+    ilrAssumed: 'presuppone che l’ILR sia ottenuto in tempo — aggiungi la data dell’ILR',
+    importResult: '{{added}} aggiunti, {{replaced}} sostituiti',
+    droppedTitle: 'Le modifiche del browser per {{id}} non superano più la convalida e sono state accantonate:',
+    droppedHint: 'Copia il JSON qui sotto se vuoi correggerlo e reimportarlo.',
+    crashed: 'Impossibile visualizzare questo profilo.',
+    resetProfile: 'Ripristina questo profilo',
+    storageFailed: 'Il browser non è riuscito a salvare (spazio di archiviazione pieno o modalità privata) — le modifiche andranno perse alla chiusura della scheda.',
+    importTooLarge: 'Il file è troppo grande per essere importato (limite {{limit}} MB).',
+  },
 }

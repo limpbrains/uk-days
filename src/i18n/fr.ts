@@ -145,4 +145,14 @@ export const fr: Translation = {
   errors: {
     skipped: 'a été ignoré :',
   },
+  late: {
+    ilrAssumed: 'suppose que l’ILR est obtenu à temps — ajoutez la date de l’ILR',
+    importResult: '{{added}} ajouté(s), {{replaced}} remplacé(s)',
+    droppedTitle: 'Les modifications du navigateur pour {{id}} ne passent plus la validation et ont été mises de côté :',
+    droppedHint: 'Copiez le JSON ci-dessous si vous voulez le corriger et le réimporter.',
+    crashed: 'Ce profil n’a pas pu être affiché.',
+    resetProfile: 'Réinitialiser ce profil',
+    storageFailed: 'Le navigateur n’a pas pu enregistrer (stockage plein ou mode privé) — les modifications seront perdues à la fermeture de l’onglet.',
+    importTooLarge: 'Le fichier est trop volumineux pour être importé (limite de {{limit}} Mo).',
+  },
 }

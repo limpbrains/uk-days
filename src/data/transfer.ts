@@ -12,6 +12,8 @@ interface ExportFile {
   profiles: { id: string; raw: unknown }[]
 }
 
+export const MAX_PROFILES = 100
+
 export function exportProfiles(profiles: { id: string; raw: unknown }[]): string {
   const file: ExportFile = { app: 'uk-days', version: 1, profiles }
   return JSON.stringify(file, null, 2)
@@ -37,10 +39,14 @@ export function importProfiles(text: string): ImportResult {
   if (!isRecord(data)) return { profiles: [], errors: ['file is not a uk-days export or a profile'] }
 
   const entries: TransferEntry[] = []
+  const errors: string[] = []
   if (data.app === 'uk-days' && Array.isArray(data.profiles)) {
-    for (const p of data.profiles) {
-      if (isRecord(p) && typeof p.id === 'string') entries.push({ id: p.id, raw: p.raw })
-    }
+    if (data.version !== 1) return { profiles: [], errors: [`unsupported export version ${String(data.version)} (this app reads version 1)`] }
+    if (data.profiles.length > MAX_PROFILES) return { profiles: [], errors: [`a file may hold at most ${MAX_PROFILES} profiles`] }
+    data.profiles.forEach((p, i) => {
+      if (isRecord(p) && typeof p.id === 'string' && p.raw !== undefined) entries.push({ id: p.id, raw: p.raw })
+      else errors.push(`entry #${i + 1} is not a {id, raw} profile entry`)
+    })
   } else if ('absences' in data) {
     entries.push({ id: null, raw: data })
   } else {
@@ -48,7 +54,6 @@ export function importProfiles(text: string): ImportResult {
   }
 
   const profiles: TransferEntry[] = []
-  const errors: string[] = []
   for (const e of entries) {
     const { errors: errs } = parseProfile(`${e.id ?? 'profile'}.json`, e.raw)
     if (errs.length) errors.push(`${e.id ?? 'profile'}: ${errs.join('; ')}`)

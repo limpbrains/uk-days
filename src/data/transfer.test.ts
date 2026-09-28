@@ -62,3 +62,24 @@ describe('mergeImport', () => {
     expect(r).toEqual({ overrides: {}, locals, added: 0, replaced: 0 })
   })
 })
+
+describe('importProfiles: envelope checks', () => {
+  it('rejects unsupported export versions', () => {
+    const r = importProfiles(JSON.stringify({ app: 'uk-days', version: 2, profiles: [] }))
+    expect(r.profiles).toEqual([])
+    expect(r.errors[0]).toMatch(/version 2/)
+  })
+
+  it('reports malformed entries by index instead of dropping them', () => {
+    const r = importProfiles(JSON.stringify({ app: 'uk-days', version: 1, profiles: [{ raw: a }, 'junk', { id: 'ok', raw: a }] }))
+    expect(r.profiles.map((p) => p.id)).toEqual(['ok'])
+    expect(r.errors).toEqual([expect.stringMatching(/entry #1/), expect.stringMatching(/entry #2/)])
+  })
+
+  it('caps the number of profiles in one file', () => {
+    const profiles = Array.from({ length: 101 }, (_, i) => ({ id: `local-${i}`, raw: a }))
+    const r = importProfiles(JSON.stringify({ app: 'uk-days', version: 1, profiles }))
+    expect(r.profiles).toEqual([])
+    expect(r.errors[0]).toMatch(/at most 100 profiles/)
+  })
+})

@@ -145,4 +145,14 @@ export const es: Translation = {
   errors: {
     skipped: 'se omitió:',
   },
+  late: {
+    ilrAssumed: 'asume que el ILR se obtiene a tiempo — añade la fecha del ILR',
+    importResult: '{{added}} añadidos, {{replaced}} reemplazados',
+    droppedTitle: 'Las ediciones del navegador para {{id}} ya no superan la validación y se dejaron de lado:',
+    droppedHint: 'Copia el JSON de abajo si quieres corregirlo y volver a importarlo.',
+    crashed: 'No se pudo mostrar este perfil.',
+    resetProfile: 'Restablecer este perfil',
+    storageFailed: 'El navegador no pudo guardar (almacenamiento lleno o modo privado) — los cambios se perderán al cerrar la pestaña.',
+    importTooLarge: 'El archivo es demasiado grande para importar (límite de {{limit}} MB).',
+  },
 }

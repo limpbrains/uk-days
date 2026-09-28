@@ -4,7 +4,8 @@ import { loadProfiles } from '../data/loadProfiles'
 import { BudgetBars, Patterns } from './BudgetBar'
 import { ErrorBanner } from './ErrorBanner'
 import { ErrorBoundary } from './ErrorBoundary'
-import { useFormat, todayDay } from './format'
+import { useFormat } from './format'
+import { useTodayDay } from './useTodayDay'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NewProfileForm } from './NewProfileForm'
 import { ProfileEditor } from './ProfileEditor'
@@ -15,6 +16,8 @@ import { StatCards } from './StatCards'
 import { useModel, type WhatIf } from './useModel'
 import { YearStrip } from './YearStrip'
 import { fromDay, lastYearStartFor, windowStartFor, countAbsent } from '../lib/naturalisation'
+
+const IMPORT_LIMIT_MB = 2
 
 interface DashboardProps {
   entry: ProfileEntry
@@ -29,11 +32,14 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
   const f = useFormat()
   const profile = entry.profile
   // While the form holds an invalid state we keep it locally; otherwise the store is the source of truth.
-  const [invalid, setInvalid] = useState<{ draft: RawProfile; errors: string[] } | null>(null)
-  const draft = invalid?.draft ?? entry.raw
+  // An invalid draft is only shown while the stored profile it was based on is unchanged;
+  // an external change (import, reset) supersedes it.
+  const [invalid, setInvalid] = useState<{ base: RawProfile; draft: RawProfile; errors: string[] } | null>(null)
+  const current = invalid && invalid.base === entry.raw ? invalid : null
+  const draft = current?.draft ?? entry.raw
   const onChange = (next: RawProfile) => {
     const errors = store.update(entry.id, next)
-    setInvalid(errors.length ? { draft: next, errors } : null)
+    setInvalid(errors.length ? { base: entry.raw, draft: next, errors } : null)
   }
   const [whatIf, setWhatIf] = useState<WhatIf>({ extraDays: 0, extraStart: fromDay(today + 1) })
   const m = useModel(profile, today, whatIf)
@@ -88,7 +94,7 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
         <ProfileEditor
           entry={entry}
           draft={draft}
-          errors={invalid?.errors ?? []}
+          errors={current?.errors ?? []}
           today={today}
           onChange={onChange}
           onReset={() => { setInvalid(null); store.reset(entry.id) }}
@@ -104,8 +110,8 @@ export default function App() {
   const { t } = useTranslation()
   const f = useFormat()
   const { profiles, errors } = useMemo(() => loadProfiles(), [])
-  const today = useMemo(() => todayDay(), [])
-  const store = useProfileStore(profiles)
+  const today = useTodayDay()
+  const store = useProfileStore(profiles, fromDay(today))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
@@ -122,6 +128,10 @@ export default function App() {
   }
   const importFile = async (file: File | undefined) => {
     if (!file) return
+    if (file.size > IMPORT_LIMIT_MB * 1024 * 1024) {
+      setImportMsg(t('late.importTooLarge', { limit: IMPORT_LIMIT_MB }))
+      return
+    }
     const { added, replaced, errors: errs } = store.importAll(await file.text())
     setImportMsg([t('late.importResult', { added, replaced }), ...errs].join(' · '))
     setTimeout(() => setImportMsg(null), 8000)
@@ -149,8 +159,9 @@ export default function App() {
         <LanguageSwitcher />
       </header>
       {importMsg && <div className="card" role="status">{importMsg}</div>}
+      {store.storageFailed && <div className="card banner" role="alert">{t('late.storageFailed')}</div>}
       <ErrorBanner errors={errors} />
-      {store.droppedOverrides.map((d) => (
+      {store.dropped.map((d) => (
         <div key={d.id} className="card banner" role="alert">
           {t('late.droppedTitle', { id: d.id })}
           <ul>{d.errors.map((e) => <li key={e}>{e}</li>)}</ul>

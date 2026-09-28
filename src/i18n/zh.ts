@@ -145,4 +145,14 @@ export const zh: Translation = {
   errors: {
     skipped: '已跳过:',
   },
+  late: {
+    ilrAssumed: '假设按时获得 ILR — 请添加 ILR 日期',
+    importResult: '已添加 {{added}} 个,已替换 {{replaced}} 个',
+    droppedTitle: '{{id}} 的浏览器修改已不再通过验证,已被搁置:',
+    droppedHint: '如需修复并重新导入,请复制下方的 JSON。',
+    crashed: '无法显示此档案。',
+    resetProfile: '重置此档案',
+    storageFailed: '浏览器无法保存(存储空间已满或处于隐私模式)— 关闭标签页后更改将丢失。',
+    importTooLarge: '文件过大,无法导入(限制 {{limit}} MB)。',
+  },
 }

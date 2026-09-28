@@ -290,12 +290,18 @@ export function withExtra(ctx: Context, extra: Extra | null): Context {
   return build(ctx, extra)
 }
 
+/**
+ * First day of the qualifying period ending on `day`: the period is exactly windowYears long,
+ * i.e. start + windowYears = day + 1 (so it is computed from the day after the application).
+ * Around 29 February this differs from "day − N years + 1".
+ */
 export function windowStartFor(ctx: Context, day: number): number {
-  return addYears(day, -ctx.rules.windowYears) + 1
+  return addYears(day + 1, -ctx.rules.windowYears)
 }
 
+/** First day of the 12 months ending on `day` (start + 12 months = day + 1). */
 export function lastYearStartFor(day: number): number {
-  return addMonths(day, -12) + 1
+  return addMonths(day + 1, -12)
 }
 
 export function checkDate(ctx: Context, day: number): CheckResult {
@@ -349,7 +355,8 @@ export function shiftCurve(ctx: Context, extraStartDay: number, fromDay: number,
  */
 export function targetDay(ctx: Context): number {
   if (ctx.applicationDay !== null) return ctx.applicationDay
-  const byArrival = addYears(ctx.arrivedDay, ctx.rules.windowYears) - 1
+  // First day whose window starts on (or, after a 29 Feb arrival, just after) the arrival day.
+  const byArrival = addYears(ctx.arrivedDay - 1, ctx.rules.windowYears)
   return Number.isFinite(ctx.openUntil) ? Math.max(byArrival, ctx.openUntil) : byArrival
 }
 

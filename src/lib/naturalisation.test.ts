@@ -13,6 +13,7 @@ import {
   fullDaysAbsent,
   isAbsent,
   isIsoDate,
+  lastYearStartFor,
   normalizeAbsences,
   shiftCurve,
   targetDay,
@@ -338,9 +339,10 @@ describe('checkDate: qualifying window', () => {
 
   it('handles a Feb 29 arrival', () => {
     const ctx = createContext(profile([], { arrivedUK: '2024-02-29' }))
-    // 2029 is not a leap year: 2029-02-27 - 5y = 2024-02-27, +1 = 02-28 < arrival → fail
+    // Window for 2029-02-27 starts 2024-02-28 (before arrival); for 2029-02-28 it starts 2024-03-01.
     expect(checkDate(ctx, d('2029-02-27')).violations).toContain('notInUkAtStart')
     expect(checkDate(ctx, d('2029-02-28')).ok).toBe(true)
+    expect(fromDay(targetDay(ctx))).toBe('2029-02-28')
   })
 
   it('fails when absent on the first day of the window, passes on the return day', () => {
@@ -416,8 +418,19 @@ describe('checkDate: 90-day rule', () => {
 
   it('handles Feb 29 in the 12-month window on a leap year', () => {
     const ctx = createContext(profile([{ out: '2028-02-28', in: '2028-03-01' }]))
-    expect(checkDate(ctx, d('2029-02-28')).lastYearAbsent).toBe(1)
+    // The 12 months ending 2029-02-28 start on 2028-03-01, so 2028-02-29 is outside.
+    expect(checkDate(ctx, d('2029-02-27')).lastYearAbsent).toBe(1)
+    expect(checkDate(ctx, d('2029-02-28')).lastYearAbsent).toBe(0)
     expect(checkDate(ctx, d('2029-03-01')).lastYearAbsent).toBe(0)
+  })
+
+  it('windows are exactly N years/months long: start + N = day + 1', () => {
+    const ctx = createContext(profile([]))
+    for (const iso of ['2029-02-28', '2028-02-29', '2028-03-01', '2027-08-31', '2030-01-31']) {
+      const D = d(iso)
+      expect(addYears(windowStartFor(ctx, D), 5)).toBe(D + 1)
+      expect(addMonths(lastYearStartFor(D), 12)).toBe(D + 1)
+    }
   })
 })
 
@@ -690,8 +703,8 @@ describe('checkDate agrees with a day-by-day brute force on random trips', () =>
       for (let k = 0; k < 20; k++) {
         const D = d('2027-06-01') + Math.floor(rand() * 500)
         const r = checkDate(ctx, D)
-        const ws = addYears(D, -5) + 1
-        const ls = addMonths(D, -12) + 1
+        const ws = addYears(D + 1, -5)
+        const ls = addMonths(D + 1, -12)
         let total = 0
         let last = 0
         for (let x = ws; x <= D; x++) if (abroad.has(x)) { total++; if (x >= ls) last++ }
