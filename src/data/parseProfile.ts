@@ -1,4 +1,4 @@
-import { normalizeAbsences, isIsoDate, DEFAULT_RULES, type Absence, type Profile, type Rules } from '../lib/naturalisation'
+import { normalizeAbsences, isIsoDate, toDay, DEFAULT_RULES, type Absence, type Profile, type Rules } from '../lib/naturalisation'
 
 export interface ParseResult {
   profile: Profile | null
@@ -6,6 +6,17 @@ export interface ParseResult {
 }
 
 const RULE_KEYS = Object.keys(DEFAULT_RULES) as (keyof Rules)[]
+
+/** Inclusive integer bounds per rule; keeps the timeline small and the dates finite. */
+export const RULE_BOUNDS: Record<keyof Rules, [number, number]> = {
+  windowYears: [1, 50],
+  totalLimit: [0, 20000],
+  softLimit: [0, 20000],
+  hardLimit: [0, 20000],
+  lastYearLimit: [0, 366],
+  lastYearSoftLimit: [0, 366],
+  ilrMonths: [0, 120],
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -30,10 +41,21 @@ export function parseProfile(path: string, raw: unknown): ParseResult {
       for (const k of RULE_KEYS) {
         const v = raw.rules[k]
         if (v === undefined) continue
-        if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) errors.push(`"rules.${k}" must be a non-negative number`)
+        const [min, max] = RULE_BOUNDS[k]
+        if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max) errors.push(`"rules.${k}" must be an integer between ${min} and ${max}`)
         else rules[k] = v
       }
+      if (!errors.length) {
+        if (rules.softLimit < rules.totalLimit) errors.push('"rules.softLimit" must be at least "rules.totalLimit"')
+        if (rules.hardLimit < rules.softLimit) errors.push('"rules.hardLimit" must be at least "rules.softLimit"')
+        if (rules.lastYearSoftLimit < rules.lastYearLimit) errors.push('"rules.lastYearSoftLimit" must be at least "rules.lastYearLimit"')
+      }
     }
+  }
+  if (!errors.length) {
+    const arrived = toDay(raw.arrivedUK as string)
+    if (raw.ilrDate !== undefined && toDay(raw.ilrDate as string) < arrived) errors.push('"ilrDate" must not be before "arrivedUK"')
+    if (raw.applicationDate !== undefined && toDay(raw.applicationDate as string) < arrived) errors.push('"applicationDate" must not be before "arrivedUK"')
   }
   if (errors.length) return { profile: null, errors }
 

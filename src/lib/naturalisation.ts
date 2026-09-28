@@ -243,11 +243,22 @@ export interface CheckResult {
   violations: Violation[]
 }
 
-/** Years past the qualifying period the timeline extends, so shifted dates can be found. */
+/** Years past the latest anchor date the timeline extends, so shifted dates can be found. */
 const HORIZON_EXTRA_YEARS = 3
 
+/** Last day of the timeline: 3 years past the latest of arrival + window, today, the planned date and ILR + wait. */
+function horizonEnd(base: Omit<Context, 'tl' | 'extra'>): number {
+  const anchors = [
+    addYears(base.arrivedDay, base.rules.windowYears),
+    Number.isFinite(base.openUntil) ? base.openUntil : base.arrivedDay,
+    base.applicationDay ?? base.arrivedDay,
+    base.ilrDay === null ? base.arrivedDay : addMonths(base.ilrDay, base.rules.ilrMonths),
+  ]
+  return addYears(Math.max(...anchors), HORIZON_EXTRA_YEARS)
+}
+
 function build(base: Omit<Context, 'tl' | 'extra'>, extra: Extra | null): Context {
-  const endDay = addYears(base.arrivedDay, base.rules.windowYears + HORIZON_EXTRA_YEARS)
+  const endDay = horizonEnd(base)
   const all = extra && extra.days > 0
     ? [...base.spans, { out: extra.startDay - 1, in: extra.startDay + extra.days, days: extra.days }]
     : base.spans
@@ -332,9 +343,14 @@ export function shiftCurve(ctx: Context, extraStartDay: number, fromDay: number,
   return points
 }
 
-/** The planned application day if set, else the first day whose qualifying window starts on the arrival day. */
+/**
+ * The planned application day if set, else the first day whose qualifying window starts on the
+ * arrival day — but never earlier than today when today is known (long-time residents).
+ */
 export function targetDay(ctx: Context): number {
-  return ctx.applicationDay ?? addYears(ctx.arrivedDay, ctx.rules.windowYears) - 1
+  if (ctx.applicationDay !== null) return ctx.applicationDay
+  const byArrival = addYears(ctx.arrivedDay, ctx.rules.windowYears) - 1
+  return Number.isFinite(ctx.openUntil) ? Math.max(byArrival, ctx.openUntil) : byArrival
 }
 
 export interface Budget {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RawProfile } from '../data/rawProfile'
 import type { ProfileEntry } from './useProfileStore'
+import { RULE_BOUNDS } from '../data/parseProfile'
 import { fromDay, fullDaysAbsent, isIsoDate, toDay, DEFAULT_RULES, type Absence, type Rules } from '../lib/naturalisation'
 
 const RULE_KEYS = Object.keys(DEFAULT_RULES) as (keyof Rules)[]
@@ -34,8 +35,15 @@ export function ProfileEditor({ entry, draft, errors, today, onChange, onReset, 
   const setTrip = (i: number, next: Absence) => set({ absences: draft.absences.map((a, j) => (j === i ? next : a)) })
   const removeTrip = (i: number) => set({ absences: draft.absences.filter((_, j) => j !== i) })
   const addTrip = () => {
-    // Start the new trip after the latest known return so two clicks never overlap.
-    const lastIn = Math.max(today, ...draft.absences.map((a) => (isIsoDate(a.in) ? toDay(a.in) : isIsoDate(a.out) ? toDay(a.out) + 1 : 0)))
+    // Start the new trip after the latest return so two clicks never overlap; with an open-ended
+    // trip (still abroad) nothing can follow it, so slot the new one just before it instead.
+    const open = draft.absences.find((a) => !a.in && isIsoDate(a.out))
+    if (open) {
+      const end = toDay(open.out)
+      set({ absences: [...draft.absences, { out: fromDay(end - 8), in: fromDay(end - 1) }] })
+      return
+    }
+    const lastIn = Math.max(today, ...draft.absences.map((a) => (isIsoDate(a.in) ? toDay(a.in) : 0)))
     set({ absences: [...draft.absences, { out: fromDay(lastIn), in: fromDay(lastIn + 7) }] })
   }
 
@@ -91,7 +99,7 @@ export function ProfileEditor({ entry, draft, errors, today, onChange, onReset, 
         {RULE_KEYS.map((k) => (
           <label key={k}>
             {t(`editor.rules.${k}`)}
-            <input type="number" min={0} value={draft.rules[k]} onChange={(e) => setRule(k, e.target.value)} />
+            <input type="number" min={RULE_BOUNDS[k][0]} max={RULE_BOUNDS[k][1]} step={1} value={draft.rules[k]} onChange={(e) => setRule(k, e.target.value)} />
           </label>
         ))}
       </div>

@@ -31,3 +31,34 @@ describe('export / import', () => {
     expect(importProfiles('[1,2]').errors[0]).toMatch(/not a uk-days export/)
   })
 })
+
+import { mergeImport } from './transfer'
+
+describe('mergeImport', () => {
+  const fileIds = ['example-standard']
+  const locals = [{ id: 'local-1', raw: b }]
+
+  it('adds new profiles, replaces same-id locals, overrides file profiles, and counts each', () => {
+    const r = mergeImport(
+      [
+        { id: 'example-standard', raw: a },
+        { id: 'local-1', raw: a },
+        { id: 'local-9', raw: b },
+        { id: null, raw: b },
+      ],
+      fileIds,
+      locals,
+      () => 'local-new',
+    )
+    expect(r.overrides).toEqual({ 'example-standard': a })
+    expect(r.locals.map((l) => l.id)).toEqual(['local-1', 'local-9', 'local-new'])
+    expect(r.locals[0].raw).toEqual(a)
+    expect(r.added).toBe(2)
+    expect(r.replaced).toBe(2)
+  })
+
+  it('does not touch anything when the import is empty', () => {
+    const r = mergeImport([], fileIds, locals, () => 'x')
+    expect(r).toEqual({ overrides: {}, locals, added: 0, replaced: 0 })
+  })
+})

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { loadProfiles } from '../data/loadProfiles'
 import { BudgetBars, Patterns } from './BudgetBar'
 import { ErrorBanner } from './ErrorBanner'
+import { ErrorBoundary } from './ErrorBoundary'
 import { useFormat, todayDay } from './format'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NewProfileForm } from './NewProfileForm'
@@ -57,7 +58,7 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
           <label>
             {t('whatIf.extraDays')}
             <input type="range" min={0} max={365} value={whatIf.extraDays} onChange={(e) => setWhatIf({ ...whatIf, extraDays: +e.target.value })} />
-            <input type="number" min={0} max={365} value={whatIf.extraDays} onChange={(e) => setWhatIf({ ...whatIf, extraDays: Math.max(0, Math.min(365, +e.target.value || 0)) })} />
+            <input type="number" min={0} max={365} aria-label={t('whatIf.extraDays')} value={whatIf.extraDays} onChange={(e) => setWhatIf({ ...whatIf, extraDays: Math.max(0, Math.min(365, +e.target.value || 0)) })} />
           </label>
           <label>
             {t('whatIf.startingOn')}
@@ -121,8 +122,8 @@ export default function App() {
   }
   const importFile = async (file: File | undefined) => {
     if (!file) return
-    const { added, errors: errs } = store.importAll(await file.text())
-    setImportMsg([t('app.imported', { count: added }), ...errs].join(' · '))
+    const { added, replaced, errors: errs } = store.importAll(await file.text())
+    setImportMsg([t('late.importResult', { added, replaced }), ...errs].join(' · '))
     setTimeout(() => setImportMsg(null), 8000)
   }
 
@@ -137,8 +138,8 @@ export default function App() {
               {e.profile.name}
             </button>
           ))}
-          <button type="button" className="tab" aria-label={t('app.newProfile')} title={t('app.newProfile')} onClick={() => setCreating(true)}>+</button>
         </div>
+        <button type="button" className="tab" aria-label={t('app.newProfile')} title={t('app.newProfile')} onClick={() => setCreating(true)}>+</button>
         <div className="editor-actions">
           <button type="button" className="btn" onClick={exportAll}>{t('app.export')}</button>
           <button type="button" className="btn" onClick={() => fileInput.current?.click()}>{t('app.import')}</button>
@@ -149,6 +150,14 @@ export default function App() {
       </header>
       {importMsg && <div className="card" role="status">{importMsg}</div>}
       <ErrorBanner errors={errors} />
+      {store.droppedOverrides.map((d) => (
+        <div key={d.id} className="card banner" role="alert">
+          {t('late.droppedTitle', { id: d.id })}
+          <ul>{d.errors.map((e) => <li key={e}>{e}</li>)}</ul>
+          <p className="hint">{t('late.droppedHint')}</p>
+          <textarea className="json" readOnly value={d.json} rows={Math.min(12, d.json.split('\n').length)} />
+        </div>
+      ))}
       {creating && (
         <NewProfileForm
           defaultArrived={fromDay(today)}
@@ -157,14 +166,21 @@ export default function App() {
         />
       )}
       {entry ? (
-        <Dashboard
-          key={entry.id}
-          entry={entry}
-          store={store}
-          today={today}
-          onRemoved={() => setSelectedId(null)}
-          onDuplicated={(id) => setSelectedId(id)}
-        />
+        <ErrorBoundary
+          resetKey={entry.id}
+          message={t('late.crashed')}
+          actionLabel={t('late.resetProfile')}
+          onAction={() => (entry.source === 'file' ? store.reset(entry.id) : store.remove(entry.id))}
+        >
+          <Dashboard
+            key={entry.id}
+            entry={entry}
+            store={store}
+            today={today}
+            onRemoved={() => setSelectedId(null)}
+            onDuplicated={(id) => setSelectedId(id)}
+          />
+        </ErrorBoundary>
       ) : (
         !creating && <div className="card">{t('app.noProfiles')}</div>
       )}
