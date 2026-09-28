@@ -12,7 +12,7 @@ interface ExportFile {
   profiles: { id: string; raw: unknown }[]
 }
 
-export const MAX_PROFILES = 100
+export const MAX_PROFILES = 500
 
 export function exportProfiles(profiles: { id: string; raw: unknown }[]): string {
   const file: ExportFile = { app: 'uk-days', version: 1, profiles }

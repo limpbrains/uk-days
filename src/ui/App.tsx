@@ -17,7 +17,7 @@ import { useModel, type WhatIf } from './useModel'
 import { YearStrip } from './YearStrip'
 import { fromDay, isIsoDate, lastYearStartFor, windowStartFor, countAbsent } from '../lib/naturalisation'
 
-const IMPORT_LIMIT_MB = 2
+const IMPORT_LIMIT_MB = 20
 
 interface DashboardProps {
   entry: ProfileEntry

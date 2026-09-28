@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isIsoDate } from '../lib/naturalisation'
 import { todayDay } from './format'
 
 /**
@@ -8,7 +9,7 @@ import { todayDay } from './format'
 export function useTodayDay(): number {
   const [today, setToday] = useState(todayDay)
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has('today')) return
+    if (isIsoDate(new URLSearchParams(window.location.search).get('today'))) return
     const refresh = () => setToday(todayDay())
     const now = new Date()
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()

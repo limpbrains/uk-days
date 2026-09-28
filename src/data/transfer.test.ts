@@ -32,7 +32,7 @@ describe('export / import', () => {
   })
 })
 
-import { mergeImport } from './transfer'
+import { MAX_PROFILES, mergeImport } from './transfer'
 
 describe('mergeImport', () => {
   const fileIds = ['example-standard']
@@ -76,10 +76,10 @@ describe('importProfiles: envelope checks', () => {
     expect(r.errors).toEqual([expect.stringMatching(/entry #1/), expect.stringMatching(/entry #2/)])
   })
 
-  it('caps the number of profiles in one file', () => {
-    const profiles = Array.from({ length: 101 }, (_, i) => ({ id: `local-${i}`, raw: a }))
+  it('caps the number of profiles in one file at MAX_PROFILES', () => {
+    const profiles = Array.from({ length: MAX_PROFILES + 1 }, (_, i) => ({ id: `local-${i}`, raw: a }))
     const r = importProfiles(JSON.stringify({ app: 'uk-days', version: 1, profiles }))
     expect(r.profiles).toEqual([])
-    expect(r.errors[0]).toMatch(/at most 100 profiles/)
+    expect(r.errors[0]).toMatch(new RegExp(`at most ${MAX_PROFILES} profiles`))
   })
 })
