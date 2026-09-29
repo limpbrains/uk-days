@@ -72,7 +72,7 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
           </label>
         </div>
         <div className="chart-scroll"><ShiftChart curve={m.curve} target={m.target} selected={whatIf.extraDays} onSelect={(d) => setWhatIf({ ...whatIf, extraDays: d })} /></div>
-        <p className="hint">{t('whatIf.hint', { years: rules.windowYears + 3 })}</p>
+        <p className="hint">{t('whatIf.hint', { date: f.day(m.all.tl.endDay) })}</p>
       </section>
 
       <section className="card">
@@ -82,6 +82,9 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
           <span><span className="sw" style={{ background: 'var(--planned)', opacity: 0.7 }} />{t('budget.planned')}</span>
           <span><span className="sw" style={{ background: 'var(--extra)', opacity: 0.7 }} />{t('budget.extra')}</span>
         </div>
+        <p className="hint">
+          <a href="https://www.gov.uk/government/publications/naturalisation-as-a-british-citizen-by-discretion-nationality-policy-guidance/naturalisation-as-a-british-citizen-by-discretion-accessible" target="_blank" rel="noopener">{t('late.discretionGuidance')}</a>
+        </p>
       </section>
 
       <section className="card">
