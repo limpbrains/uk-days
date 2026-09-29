@@ -109,8 +109,8 @@ function Dashboard({ entry, store, today, onRemoved, onDuplicated }: DashboardPr
 export default function App() {
   const { t } = useTranslation()
   const f = useFormat()
-  const { profiles, errors } = useMemo(() => loadProfiles(), [])
   const today = useTodayDay()
+  const { profiles, errors } = useMemo(() => loadProfiles(fromDay(today)), [today])
   const store = useProfileStore(profiles, fromDay(today))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)

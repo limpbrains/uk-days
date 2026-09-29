@@ -97,7 +97,7 @@ export function ShiftChart({ curve, target, selected, onSelect }: Props) {
       </svg>
       <div className="tooltip" style={{ left: `${Math.max(14, Math.min(86, (x(cursor) / W) * 100))}%`, top: `${(cp.eligibleDay === null ? PAD.t + 20 : y(cp.eligibleDay)) / H * 100}%` }}>
         {t('whatIf.tooltip', { days: cursor, date: f.day(cp.eligibleDay) })}
-        {cp.eligibleDay !== null && ` (${f.delta(cp.eligibleDay - target)})`}
+        {cp.eligibleDay !== null && ` (${f.delta(target, cp.eligibleDay)})`}
       </div>
     </div>
   )

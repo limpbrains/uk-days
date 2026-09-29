@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_RULES,
+  calendarDelta,
   addMonths,
   addYears,
   budget,
@@ -658,6 +659,22 @@ describe('horizon', () => {
     expect(targetDay(ctx)).toBe(earliestEligible(ctx, today))
     expect(targetDay(ctx)).toBeGreaterThan(today)
     expect(fromDay(targetDay(createContext(profile([], { arrivedUK: '2015-01-01' }))))).toBe('2019-12-31')
+  })
+})
+
+describe('calendarDelta', () => {
+  it('counts whole calendar months from the start date, then days', () => {
+    expect(calendarDelta(d('2026-02-01'), d('2026-03-04'))).toEqual({ months: 1, days: 3 })
+    expect(calendarDelta(d('2027-02-01'), d('2027-03-04'))).toEqual({ months: 1, days: 3 })
+    expect(calendarDelta(d('2024-02-01'), d('2024-03-04'))).toEqual({ months: 1, days: 3 })
+    expect(calendarDelta(d('2026-01-01'), d('2026-02-01'))).toEqual({ months: 1, days: 0 })
+    expect(calendarDelta(d('2026-04-01'), d('2026-05-01'))).toEqual({ months: 1, days: 0 })
+    expect(calendarDelta(d('2026-09-29'), d('2026-09-29'))).toEqual({ months: 0, days: 0 })
+    expect(calendarDelta(d('2026-01-31'), d('2026-03-01'))).toEqual({ months: 1, days: 1 })
+  })
+
+  it('is symmetric in sign', () => {
+    expect(calendarDelta(d('2026-03-04'), d('2026-02-01'))).toEqual({ months: -1, days: -3 })
   })
 })
 
