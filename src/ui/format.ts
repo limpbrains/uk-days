@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { dateLocale } from '../i18n'
-import { addMonths, isIsoDate } from '../lib/naturalisation'
+import { calendarDelta, isIsoDate } from '../lib/naturalisation'
 import { fromDay } from '../lib/naturalisation'
 
 function utc(day: number): Date {
@@ -11,8 +11,8 @@ function utc(day: number): Date {
 export interface Formatters {
   day: (day: number | null) => string
   monthYear: (day: number) => string
-  /** Human delta between two days, e.g. "+3 mo 12 d", "no shift", "−5 d". */
-  delta: (days: number) => string
+  /** Human calendar delta from one day to another, e.g. "+3 mo 12 d", "no shift", "−5 d". */
+  delta: (from: number, to: number) => string
 }
 
 /** Locale-aware date and delta formatters for the active language. */
@@ -28,17 +28,13 @@ export function useFormat(): Formatters {
     return {
       day: (day) => (day === null ? t('delta.beyondHorizon') : full.format(utc(day)).replace(/\s*г\.$/, '')),
       monthYear,
-      delta: (days) => {
-        if (days === 0) return t('delta.none')
-        const sign = days > 0 ? '+' : '−'
-        // Calendar months from the epoch day 0 so "+2 mo" means two real months, never "+1 mo 30 d".
-        const abs = Math.abs(days)
-        let months = 0
-        while (addMonths(0, months + 1) <= abs) months++
-        const rest = abs - addMonths(0, months)
-        if (months === 0) return t('delta.days', { sign, count: abs })
-        if (rest === 0) return t('delta.months', { sign, count: months })
-        return t('delta.monthsDays', { sign, months, days: rest })
+      delta: (from, to) => {
+        if (from === to) return t('delta.none')
+        const sign = to > from ? '+' : '−'
+        const { months, days } = calendarDelta(Math.min(from, to), Math.max(from, to))
+        if (months === 0) return t('delta.days', { sign, count: days })
+        if (days === 0) return t('delta.months', { sign, count: months })
+        return t('delta.monthsDays', { sign, months, days })
       },
     }
   }, [t, locale])

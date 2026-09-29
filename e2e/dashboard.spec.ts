@@ -6,7 +6,7 @@ test('shows the file profiles and their key numbers', async ({ page }) => {
   await expect(page.getByRole('tab', { name: STANDARD })).toHaveAttribute('aria-selected', 'true')
   await expect(stat(page, 'Earliest application date')).toContainText('31 Aug 2027')
   await expect(stat(page, 'Absent in 5-year window')).toContainText('293 / 450')
-  await expect(stat(page, 'Still allowed before target')).toContainText('157 d')
+  await expect(stat(page, 'Remaining of the total limit')).toContainText('157 d')
 
   await page.getByRole('tab', { name: SPOUSE }).click()
   await expect(stat(page, 'Absent in 3-year window')).toContainText('/ 270')

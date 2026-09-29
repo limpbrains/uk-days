@@ -110,6 +110,20 @@ export function addYears(day: number, years: number): number {
   return addMonths(day, years * 12)
 }
 
+/**
+ * Calendar difference from `from` to `to`: whole months counted from `from`'s day of month,
+ * then the remaining days. Negative when `to` is earlier. 2026-02-01 → 2026-03-04 is 1 month 3 days.
+ */
+export function calendarDelta(from: number, to: number): { months: number; days: number } {
+  if (to < from) {
+    const r = calendarDelta(to, from)
+    return { months: -r.months, days: -r.days }
+  }
+  let months = 0
+  while (addMonths(from, months + 1) <= to) months++
+  return { months, days: to - addMonths(from, months) }
+}
+
 // ───────────────────────── absences ─────────────────────────
 
 /** Whole days outside the UK. Departure and arrival days count as in the UK. */
