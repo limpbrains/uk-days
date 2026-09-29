@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useFormat } from './format'
 import type { Model } from './useModel'
-import { addMonths, arrivalTargetDay, toDay } from '../lib/naturalisation'
+import { addMonths, arrivalTargetDay, lastYearStartFor, toDay } from '../lib/naturalisation'
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'good' | 'critical' | 'warning' }) {
   return (
@@ -21,6 +21,8 @@ export function StatCards({ m }: { m: Model }) {
   const usedAll = m.budgetAll.usedActual + m.budgetAll.usedPlanned
   const remaining = rules.totalLimit - usedAll
   const lastYear = m.budgetAll.lastYearUsed
+  const lastYearLeft = rules.lastYearLimit - lastYear
+  const lastYearWindow = `${f.day(lastYearStartFor(m.target))} – ${f.day(m.target)}`
   const ilr = m.profile.ilrDate ? addMonths(toDay(m.profile.ilrDate), rules.ilrMonths) : null
 
   return (
@@ -33,7 +35,7 @@ export function StatCards({ m }: { m: Model }) {
           ' · ' + t('late.earliestNote') +
           (ilr === null ? ' · ' + t('late.ilrAssumed') : '')
         }
-        tone={ilr === null ? 'warning' : shift === 0 ? 'good' : shift === null || shift > 0 ? 'critical' : undefined}
+        tone={shift === null || shift > 0 ? 'critical' : ilr === null ? 'warning' : shift === 0 ? 'good' : undefined}
       />
       <Stat
         label={t('stats.target')}
@@ -60,13 +62,21 @@ export function StatCards({ m }: { m: Model }) {
       <Stat
         label={t('late.totalRemaining')}
         value={remaining >= 0 ? t('delta.days', { sign: '', count: remaining }) : t('late.overBy', { count: -remaining })}
-        sub={remaining >= 0 ? t('late.totalRemainingSub', { count: rules.lastYearLimit - lastYear }) : t('late.overStandard')}
+        sub={
+          remaining < 0
+            ? t('late.overStandard')
+            : lastYearLeft > 0
+              ? t('late.totalRemainingSub', { count: lastYearLeft })
+              : lastYearLeft === 0
+                ? t('late.lastYearExhausted')
+                : t('late.lastYearOverNote', { count: -lastYearLeft })
+        }
         tone={remaining < 0 ? 'critical' : undefined}
       />
       <Stat
         label={t('stats.lastYear')}
         value={`${lastYear} / ${rules.lastYearLimit}`}
-        sub={lastYear > rules.lastYearLimit ? t('late.overBy', { count: lastYear - rules.lastYearLimit }) : t('stats.lastYearLeft', { count: rules.lastYearLimit - lastYear })}
+        sub={(lastYear > rules.lastYearLimit ? t('late.overBy', { count: lastYear - rules.lastYearLimit }) : t('stats.lastYearLeft', { count: lastYearLeft })) + ' · ' + lastYearWindow}
         tone={lastYear > rules.lastYearLimit ? 'critical' : undefined}
       />
       <Stat

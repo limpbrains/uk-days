@@ -69,3 +69,25 @@ test('a half-typed what-if date does not crash the dashboard', async ({ page }) 
   await expect(stat(page, 'Earliest application date')).toContainText('31 Aug 2027')
   await expect(page.getByRole('alert')).toHaveCount(0)
 })
+
+test('a profile without an ILR date is flagged as status not checked, and a delay stays red', async ({ page }) => {
+  await openApp(page)
+  await page.getByRole('button', { name: 'New profile' }).click()
+  const form = page.locator('form.new-profile')
+  await form.getByLabel('Name').fill('NoStatus')
+  await form.getByLabel('Arrived in the UK').fill('2022-09-01') // target 2027-08-31; +100 days from tomorrow land in its last 12 months
+  await form.getByRole('button', { name: 'Create' }).click()
+  await expect(stat(page, 'Earliest application date')).toContainText('immigration status not checked')
+  await expect(stat(page, 'ILR held')).toContainText('not checked')
+  // A what-if block of 100 days pushes the date: the card must be red (delay), not amber (status).
+  await page.locator('.controls input[type=number]').fill('100')
+  await expect(stat(page, 'Earliest application date').locator('.value')).toHaveClass(/critical/)
+})
+
+test('yearly excess is described as an excess in both cards', async ({ page }) => {
+  await openApp(page)
+  await page.locator('.controls input[type=number]').fill('120') // from tomorrow: inside the last 12 months before the target
+  await expect(stat(page, 'Last 12 months before target')).toContainText('over by')
+  await expect(stat(page, 'Remaining of the total limit')).toContainText('12-month limit is over by')
+  await expect(stat(page, 'Remaining of the total limit')).not.toContainText(/-\d/)
+})
